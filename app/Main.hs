@@ -7,5 +7,5 @@ main :: IO ()
 main = do
     args <- getArgs
     putStrLn $ show args
-    let parsed = parse args
+    let parsed = createContexAndGetCommands args
     putStrLn $ show parsed

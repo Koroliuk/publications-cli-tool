@@ -1,6 +1,58 @@
 module Parser (
-    parse
+    createContexAndGetCommands,
+    Command,
+    Context
 ) where
+
+data Command = 
+    Command {
+        name::String,
+        args::[String]
+    } deriving(Show)
+
+data Context =
+    Context {
+        dbFilePath::String,
+        logToHTML::Bool,
+        htmlFilePath::String,
+        logToConsole::Bool,
+        logToFile::Bool,
+        logFilePath::String
+    } deriving(Show)
+
+
+createContexAndGetCommands :: [String] -> (Context, [Command])
+createContexAndGetCommands argsList = 
+    let parsed = parse(argsList)
+    in ((buildContex parsed), (getCommands (snd(parsed))))
+
+getCommands :: [(String, [String])] -> [Command]
+getCommands [] = []
+getCommands (x@(flag, args):xs)
+    | (fst(x) == "-h" || fst(x) == "--help") =  (getCommands xs) ++ [Command "Help" []]
+    | (fst(x) == "-c" || fst(x) == "--command") = (getCommands xs) ++ [Command (head args) (tail args)]
+    | otherwise = getCommands xs
+
+buildContex :: (String, [(String, [String])]) -> Context
+buildContex (dbName, arrList) = 
+    let htmlPair = findByFlagNames arrList ["--html"]
+        silent = findByFlagNames arrList ["-s", "--silent"]
+        fileLog = findByFlagNames arrList ["-l", "--log"]
+    in Context {
+        dbFilePath = dbName,
+        logToHTML = htmlPair /= ("", []),
+        htmlFilePath = if (htmlPair /= ("", [])) then head(snd(htmlPair)) else "",
+        logToConsole = not (silent /= ("", [])),
+        logToFile = fileLog /= ("", []),
+        logFilePath = if (fileLog /= ("", [])) then head(snd(fileLog)) else ""
+    }
+
+
+findByFlagNames :: [(String, [String])] -> [String] -> (String, [String])
+findByFlagNames [] flagNames = ("", [])
+findByFlagNames (x:xs) flagNames
+    | fst(x) `elem` flagNames = x
+    | otherwise = findByFlagNames xs flagNames
 
 parse :: [String] -> (String, [(String, [String])])
 parse [] = error "database file path must be provided"
