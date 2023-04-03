@@ -1,8 +1,4 @@
-module Parser (
-    createContexAndGetCommands,
-    Command,
-    Context
-) where
+module Parser where
 
 data Command = 
     Command {
@@ -56,6 +52,8 @@ findByFlagNames (x:xs) flagNames
 
 parse :: [String] -> (String, [(String, [String])])
 parse [] = error "database file path must be provided"
+parse ["-h"] = ("", [("-h", [])])
+parse ["--help"] = ("", [("--help", [])])
 parse (x:xs) = (x, args) where
     args = validateArgs(extractArgs xs)
 
