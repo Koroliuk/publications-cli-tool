@@ -34,6 +34,8 @@ class (Eq a, Show a) => PublicationManager a where
     listAllJournals :: [a] -> [String]
     listAllConferences :: [a] -> [String]
     getStatistics :: [a] -> [(String, Int)]
+    (&) :: a -> a -> [String]
+    (>!) :: a -> a -> Bool
 
 instance PublicationManager Publication where
     getPublicationTypeByTitle targetTitle publicationList =
@@ -65,4 +67,28 @@ instance PublicationManager Publication where
                 Book {}    -> [books + 1, articles, theses]
                 Article {} -> [books, articles + 1, theses]
                 Thesis {}  -> [books, articles, theses + 1]
+
+    pub1 & pub2 = foldl (\acc pub -> if elem pub (authors pub2) then acc ++ [pub] else acc) [] (authors pub1)
+    pub1 >! pub2 = (year pub1) > (year pub2)
+
+instance Semigroup Publication where
+      p1 <> p2 = Book { authors = authors p1 ++ authors p2, 
+        title = title p1 ++ ", " ++ title p2, 
+        city = "",
+        publisher = "",
+        year = max (year p1) (year p2)}
+
+instance Monoid Publication where
+    mempty = Book [] "" "" "" 0
+
+data Tree a = Leaf a | Branch (Tree a) (Tree a) deriving (Show)
+data Box a = Empty |  Element a (Box a) deriving (Show)
+
+instance Foldable Tree where
+    foldMap f (Leaf x) = f x
+    foldMap f (Branch l r) = foldMap f l `mappend` foldMap f r
+
+instance Foldable Box where
+    foldMap f (Element a box) = f a `mappend` foldMap f box
+    foldMap f (Empty) = mempty
     

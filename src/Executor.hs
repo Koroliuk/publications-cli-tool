@@ -15,12 +15,12 @@ execute (Command "create" (ptype:args)) context = case ptype of
     "Thesis"  -> createThesis args context
     _         -> putStrLn "Invalid publication type"
 
-execute (Command "read" args) context
-    | (length args) /= 1 = error "Invalid args"
+execute (Command "read" args@(targetTitle:_)) context
+    | (length args) /= 1 = error "Зайві аргументи для читання"
     | otherwise = do
         publications <- readAllPublications (dbFilePath context)
-        let publication = [pub | pub <- publications, title pub == head args]
-        putStrLn $ "Read: " ++ show publication
+        let publication = [pub | pub <- publications, title pub == targetTitle]
+        logMessage ("Було зчитано:" ++ show publication) context
 
 execute (Command "delete" args) context
     | (length args) /= 1 = error "Invalid args"
