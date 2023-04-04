@@ -1,0 +1,1 @@
+Book {authors = ["John","Doe","Jane","Smith"], title = "The Title123123123", city = "New York", publisher = "Publisher Inc", year = 2023}

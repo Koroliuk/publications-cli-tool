@@ -36,40 +36,40 @@ execute (Command "getType" args) context
     | (length args) /= 1 = error "Invalid args"
     | otherwise = do
         publications <- readAllPublications (dbFilePath context)
-        putStrLn $ show (getPublicationTypeByTitle (head args) publications)
+        logMessage ("Тип публікації: " ++ show (getPublicationTypeByTitle (head args) publications)) context
 
 execute (Command "getByAuthor" (ptype:args)) context = do 
     publications <- readAllPublications (dbFilePath context)
     case ptype of
-        "Book"    -> putStrLn $ show (getPublicationByAuthorWithPredicate (head args) (\x -> case x of Book{} -> True; _ -> False) publications)
-        "Article" -> putStrLn $ show (getPublicationByAuthorWithPredicate (head args) (\x -> case x of Article{} -> True; _ -> False) publications)
-        "Thesis"  -> putStrLn $ show (getPublicationByAuthorWithPredicate (head args) (\x -> case x of Thesis{} -> True; _ -> False) publications)
+        "Book"    -> logMessage ("Автор книг:" ++ show (getPublicationByAuthorWithPredicate (head args) (\x -> case x of Book{} -> True; _ -> False) publications)) context
+        "Article" -> logMessage ("Автор статей:" ++ show (getPublicationByAuthorWithPredicate (head args) (\x -> case x of Article{} -> True; _ -> False) publications)) context
+        "Thesis"  -> logMessage ("Автор тез:" ++ show (getPublicationByAuthorWithPredicate (head args) (\x -> case x of Thesis{} -> True; _ -> False) publications)) context
         _         -> putStrLn $ "specify type"
 
 execute (Command "getByAuthSingle" args) context
     | (length args) /= 1 = error "Invalid args"
     | otherwise = do
         publications <- readAllPublications (dbFilePath context)
-        putStrLn $ show (getSingleAutoredPublicationsByAuthor (head args) publications)
+        logMessage ("Єдиний автор для: " ++ show (getSingleAutoredPublicationsByAuthor (head args) publications)) context
 
 execute (Command "publishers" []) context = do 
     publications <- readAllPublications (dbFilePath context)
-    putStrLn $ show (listAllPublishers publications)
+    logMessage ("Видавництва: " ++ show (listAllPublishers publications)) context
 execute (Command "publishers" args) context = putStrLn "Invalid args"
 
 execute (Command "journals" []) context = do 
     publications <- readAllPublications (dbFilePath context)
-    putStrLn $ show (listAllJournals publications)
+    logMessage ("Журнали: " ++ show (listAllJournals publications)) context
 execute (Command "journals" args) context = putStrLn "Invalid args"
 
 execute (Command "conferences" []) context = do 
     publications <- readAllPublications (dbFilePath context)
-    putStrLn $ show (listAllConferences publications)
+    logMessage ("Конференції: " ++ show (listAllConferences publications)) context
 execute (Command "conferences" args) context = putStrLn "Invalid args"
 
 execute (Command "statistics" []) context = do 
     publications <- readAllPublications (dbFilePath context)
-    putStrLn $ show (getStatistics publications)
+    logMessage ("Статистика: " ++ show (getStatistics publications)) context
 execute (Command "statistics" args) context = putStrLn "Invalid args"
 
 execute (Command "Help" []) context = 
@@ -85,7 +85,7 @@ deleteByTitle titleToDelete context = do
     let updatedPublications = [show pub | pub <- publications, title pub /= titleToDelete]
     let updatedPublicationsString = foldl (\acc pub -> acc ++ (show pub) ++ "\n") "" updatedPublications
     BS.writeFile (dbFilePath context) $ BS.pack updatedPublicationsString 
-    putStrLn $ "Successfully deleted publication with title: " ++ titleToDelete
+    logMessage ("Successfully deleted publication with title: " ++ titleToDelete) context
 
     
 createBook :: [String] -> Context -> IO ()
@@ -98,7 +98,7 @@ createBook [t, city, publisher, yearStr, authorsStr] context = do
         let authors = words $ map (\c -> if c == ',' then ' ' else c) authorsStr
             year = read yearStr :: Int
             book = Book authors t city publisher year
-        putStrLn $ "Created Book: " ++ show book
+        logMessage ("Created Book: " ++ show book) context
         savePublication (dbFilePath context) book
 createBook _ content = putStrLn "Invalid arguments for Book."
 
@@ -114,7 +114,7 @@ createArticle [t, journal, yearStr, issueStr, pagesStr, authorsStr] context = do
             issue = read issueStr :: Int
             (startPage, endPage) = (read $ takeWhile (/= '-') pagesStr, read $ tail $ dropWhile (/= '-') pagesStr) :: (Int, Int)
             article = Article authors t journal year issue (startPage, endPage)
-        putStrLn $ "Created Article: " ++ show article
+        logMessage ("Created Article: " ++ show article) context
         savePublication (dbFilePath context) article
 createArticle _ content = putStrLn "Invalid arguments for Article."
 
@@ -130,7 +130,7 @@ createThesis [t, conference, city, yearStr, pagesStr, authorsStr] context = do
             year = read yearStr :: Int
             (startPage, endPage) = (read $ takeWhile (/= '-') pagesStr, read $ tail $ dropWhile (/= '-') pagesStr) :: (Int, Int)
             thesis = Thesis authors t conference city year (startPage, endPage)
-        putStrLn $ "Created Thesis: " ++ show thesis
+        logMessage ("Created Thesis: " ++ show thesis) context
         savePublication (dbFilePath context) thesis
 createThesis _ content = putStrLn "Invalid arguments for Thesis."
 
@@ -141,13 +141,13 @@ updateBook [t, city, publisher, yearStr, authorsStr] context = do
     putStrLn $ show (publications)
     if (length alreadySaved > 0)
         then do 
-            putStrLn $ "okkk"
             let updatedPublications = [pub | pub <- publications, title pub /= t]
             let authors = words $ map (\c -> if c == ',' then ' ' else c) authorsStr
                 year = read yearStr :: Int
                 book = Book authors t city publisher year    
             let updatedPublicationsString = foldl (\acc pub -> acc ++ (show pub) ++ "\n") "" (updatedPublications++[book])
             BS.writeFile (dbFilePath context) $ BS.pack updatedPublicationsString 
+            logMessage ("Updated Book with title: " ++ t) context
     else do
         putStrLn $ "Such book doesnt exist"
 updateBook _ content = putStrLn "Invalid arguments for Book."
@@ -166,6 +166,7 @@ updateArticle [t, journal, yearStr, issueStr, pagesStr, authorsStr] context = do
                 article = Article authors t journal year issue (startPage, endPage)
             let updatedPublicationsString = foldl (\acc pub -> acc ++ (show pub) ++ "\n") "" (updatedPublications++[article])
             BS.writeFile (dbFilePath context) $ BS.pack updatedPublicationsString 
+            logMessage ("Updated Article with title: " ++ t) context
     else do
         putStrLn $ "Such artickle doesnt exist"
 updateArticle _ content = putStrLn "Invalid arguments for Article."
@@ -183,6 +184,7 @@ updateThesis [t, conference, city, yearStr, pagesStr, authorsStr] context = do
                 thesis = Thesis authors t conference city year (startPage, endPage)
             let updatedPublicationsString = foldl (\acc pub -> acc ++ (show pub) ++ "\n") "" (updatedPublications++[thesis])
             BS.writeFile (dbFilePath context) $ BS.pack updatedPublicationsString 
+            logMessage ("Updated Thesis with title: " ++ t) context
     else do
         putStrLn $ "Such thesis doesnt exist"    
 updateThesis _ content = putStrLn "Invalid arguments for Thesis."
