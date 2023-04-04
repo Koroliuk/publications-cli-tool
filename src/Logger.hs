@@ -20,23 +20,22 @@ logMessage message context = do
         then appendFile (logFilePath context) (message++"\n")
     else return ()
 
+    let htmlFile = (htmlFilePath context)
     if (logToHTML context) 
         then do
-            isFileAlreadyExists <- doesFileExist (htmlFilePath context)
+            isFileAlreadyExists <- doesFileExist htmlFile
             if (not isFileAlreadyExists) 
-                then appendFile (htmlFilePath context) (start ++ "<p>" ++ message ++ "</p>\n" ++ end)
+                then appendFile htmlFile (start ++ "<p>" ++ message ++ "</p>\n" ++ end)
+            else do
+                content <- readFile htmlFile
+                let linesContent = lines content
+                let nonEmptyLines = filter (not . null) linesContent
+                let nonEmptyLinesToRemove = 2
+
+                if length nonEmptyLines <= nonEmptyLinesToRemove
+                    then error "Файл має направильну структуру"
                 else do
-                    content <- readFile (htmlFilePath context)
-                    let linesContent = lines content
-                    let nonEmptyLines = filter (not . null) linesContent
-                    let nonEmptyLinesToRemove = 2
-
-                    if length nonEmptyLines <= nonEmptyLinesToRemove
-                        then error "There are not enough non-empty lines to remove."
-                    else do
-                        let nonEmptyLinesUpdated = take (length nonEmptyLines - nonEmptyLinesToRemove) nonEmptyLines
-                        let updatedContent = (unlines nonEmptyLinesUpdated) ++ "<p>" ++ message ++ "</p>\n" ++ end
-
-                        withFile (htmlFilePath context) WriteMode $ \handle ->
-                            hPutStr handle updatedContent
+                    let nonEmptyLinesUpdated = take (length nonEmptyLines - nonEmptyLinesToRemove) nonEmptyLines
+                    let updatedContent = (unlines nonEmptyLinesUpdated) ++ "<p>" ++ message ++ "</p>\n" ++ end
+                    writeFile htmlFile updatedContent
     else return ()
