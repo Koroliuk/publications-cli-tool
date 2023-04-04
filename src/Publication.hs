@@ -1,12 +1,21 @@
-module Publication where
+module Publication (
+    Publication(..),
+    getPublicationTypeByTitle, 
+    getPublicationByAuthorWithPredicate,
+    getSingleAutoredPublicationsByAuthor,
+    listAllPublishers,
+    listAllJournals,
+    listAllConferences,
+    getStatistics
+) where
 
 data Publication = 
     Book {
-        authors :: [String],
-        title :: String,
-        city :: String, 
-        publisher :: String, 
-        year :: Int
+        authors::[String],
+        title::String,
+        city::String, 
+        publisher::String, 
+        year::Int
     } 
     | Article {
         authors :: [String],
@@ -49,8 +58,7 @@ instance PublicationManager Publication where
     getPublicationByAuthorWithPredicate targetAuthor predicate publicationList = 
         foldl (\acc pub -> if elem targetAuthor (authors pub) && predicate pub then pub:acc else acc) [] publicationList
 
-    getSingleAutoredPublicationsByAuthor targetAuthor publicationList = 
-        filter (\pub -> [targetAuthor] == (authors pub)) publicationList
+    getSingleAutoredPublicationsByAuthor targetAuthor publicationList = filter (\pub -> [targetAuthor] == (authors pub)) publicationList
 
     listAllPublishers publicationList = 
         foldl (\acc pub -> if elem pub acc then acc else acc ++ [pub]) [] [publisher pub | pub@(Book {}) <- publicationList]
