@@ -27,6 +27,7 @@ library
   exposed-modules:
       Executor
       Lib
+      Logger
       Parser
       Publication
   other-modules:
@@ -36,6 +37,7 @@ library
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
       base >=4.7 && <5
+    , directory
   default-language: Haskell2010
 
 executable book-store-tool-exe
@@ -48,6 +50,7 @@ executable book-store-tool-exe
   build-depends:
       base >=4.7 && <5
     , book-store-tool
+    , directory
   default-language: Haskell2010
 
 test-suite book-store-tool-test
@@ -61,4 +64,5 @@ test-suite book-store-tool-test
   build-depends:
       base >=4.7 && <5
     , book-store-tool
+    , directory
   default-language: Haskell2010
