@@ -4,6 +4,9 @@ import Parser
 import Data.Maybe (catMaybes)
 import Publication
 import Logger
+import System.IO
+import Control.Monad (forM_)
+import System.Directory
 
 execute :: Command -> Context -> IO()
 execute (Command "create" (ptype:args)) context = case ptype of
@@ -19,13 +22,31 @@ execute (Command "read" args) context
         let publication = [pub | pub <- publications, title pub == head args]
         putStrLn $ "Read: " ++ show publication
 
+execute (Command "delete" args) context
+    | (length args) /= 1 = error "Invalid args"
+    | otherwise = deleteByTitle (head args) context
+
 execute (Command "Help" []) context = 
     putStr("book-store-tool [DBNAME] [-c|--command COMMANDNAME [ARGS]]\n" ++
         "\t[-l|--log LOGNAME]\n" ++
         "\t[-s|--silent]\n" ++
         "\t[--html FILENAME]\n" ++
         "\t[-h|--help]\n")
-        
+
+deleteByTitle :: String -> Context -> IO ()
+deleteByTitle titleToDelete context = do
+    publications <- readAllPublications (dbFilePath context)
+    let updatedPublications = [pub | pub <- publications, title pub /= titleToDelete]
+    let tempfile = "temp.txt"
+    withFile tempfile WriteMode $ \handle -> do
+        forM_ updatedPublications $ \pub -> do
+            hPutStrLn handle (show pub)
+    removeFile (dbFilePath context)
+    renameFile tempfile (dbFilePath context)
+
+    putStrLn $ "Successfully deleted publication with title: " ++ titleToDelete
+
+    
 createBook :: [String] -> Context -> IO ()
 createBook [t, city, publisher, yearStr, authorsStr] context = do
     publications <- readAllPublications (dbFilePath context)
