@@ -28,9 +28,49 @@ execute (Command "delete" args) context
 
 execute (Command "update" (ptype:args)) context = case ptype of
     "Book"    -> updateBook args context
-    -- "Article" -> updateArticle args context
-    -- "Thesis"  -> updateThesis args context
+    "Article" -> updateArticle args context
+    "Thesis"  -> updateThesis args context
     _         -> putStrLn "Invalid publication type"
+
+execute (Command "getType" args) context
+    | (length args) /= 1 = error "Invalid args"
+    | otherwise = do
+        publications <- readAllPublications (dbFilePath context)
+        putStrLn $ show (getPublicationTypeByTitle (head args) publications)
+
+execute (Command "getByAuthor" (ptype:args)) context = do 
+    publications <- readAllPublications (dbFilePath context)
+    case ptype of
+        "Book"    -> putStrLn $ show (getPublicationByAuthorWithPredicate (head args) (\x -> case x of Book{} -> True; _ -> False) publications)
+        "Article" -> putStrLn $ show (getPublicationByAuthorWithPredicate (head args) (\x -> case x of Article{} -> True; _ -> False) publications)
+        "Thesis"  -> putStrLn $ show (getPublicationByAuthorWithPredicate (head args) (\x -> case x of Thesis{} -> True; _ -> False) publications)
+        _         -> putStrLn $ "specify type"
+
+execute (Command "getByAuthSingle" args) context
+    | (length args) /= 1 = error "Invalid args"
+    | otherwise = do
+        publications <- readAllPublications (dbFilePath context)
+        putStrLn $ show (getSingleAutoredPublicationsByAuthor (head args) publications)
+
+execute (Command "publishers" []) context = do 
+    publications <- readAllPublications (dbFilePath context)
+    putStrLn $ show (listAllPublishers publications)
+execute (Command "publishers" args) context = putStrLn "Invalid args"
+
+execute (Command "journals" []) context = do 
+    publications <- readAllPublications (dbFilePath context)
+    putStrLn $ show (listAllJournals publications)
+execute (Command "journals" args) context = putStrLn "Invalid args"
+
+execute (Command "conferences" []) context = do 
+    publications <- readAllPublications (dbFilePath context)
+    putStrLn $ show (listAllConferences publications)
+execute (Command "conferences" args) context = putStrLn "Invalid args"
+
+execute (Command "statistics" []) context = do 
+    publications <- readAllPublications (dbFilePath context)
+    putStrLn $ show (getStatistics publications)
+execute (Command "statistics" args) context = putStrLn "Invalid args"
 
 execute (Command "Help" []) context = 
     putStr("book-store-tool [DBNAME] [-c|--command COMMANDNAME [ARGS]]\n" ++

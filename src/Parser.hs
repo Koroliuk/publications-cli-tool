@@ -72,7 +72,7 @@ isAllowedFlag :: String -> Bool
 isAllowedFlag s = s `elem` allowedFlasg
 
 allowedCommand :: [String]
-allowedCommand = ["create", "read", "update", "delete"]
+allowedCommand = ["create", "read", "update", "delete", "getType", "getByAuthor", "getByAuthSingle", "publishers", "journals", "conferences", "statistics"]
 
 validateArgs :: [(String, [String])] -> [(String, [String])]
 validateArgs argsList = 
