@@ -1,12 +1,12 @@
 module Executor where
 
 import Parser
-import Data.Maybe (catMaybes)
 import Publication
 import Logger
-import System.IO
+import qualified Data.ByteString.Char8 as BS (readFile, writeFile, unlines, unpack, pack, append)
 import Control.Monad (forM_)
 import System.Directory
+import DBManager
 
 execute :: Command -> Context -> IO()
 execute (Command "create" (ptype:args)) context = case ptype of
@@ -82,14 +82,9 @@ execute (Command "Help" []) context =
 deleteByTitle :: String -> Context -> IO ()
 deleteByTitle titleToDelete context = do
     publications <- readAllPublications (dbFilePath context)
-    let updatedPublications = [pub | pub <- publications, title pub /= titleToDelete]
-    let tempfile = "temp.txt"
-    withFile tempfile WriteMode $ \handle -> do
-        forM_ updatedPublications $ \pub -> do
-            hPutStrLn handle (show pub)
-    removeFile (dbFilePath context)
-    renameFile tempfile (dbFilePath context)
-
+    let updatedPublications = [show pub | pub <- publications, title pub /= titleToDelete]
+    let updatedPublicationsString = foldl (\acc pub -> acc ++ (show pub) ++ "\n") "" updatedPublications
+    BS.writeFile (dbFilePath context) $ BS.pack updatedPublicationsString 
     putStrLn $ "Successfully deleted publication with title: " ++ titleToDelete
 
     
@@ -126,6 +121,7 @@ createArticle _ content = putStrLn "Invalid arguments for Article."
 createThesis :: [String] -> Context -> IO ()
 createThesis [t, conference, city, yearStr, pagesStr, authorsStr] context = do
     publications <- readAllPublications (dbFilePath context)
+
     let alreadySaved = [pub | pub <- publications, title pub == t]
     if (length alreadySaved > 0)
         then do error "Wrong title"
@@ -142,18 +138,16 @@ updateBook :: [String] -> Context -> IO ()
 updateBook [t, city, publisher, yearStr, authorsStr] context = do
     publications <- readAllPublications (dbFilePath context)
     let alreadySaved = [pub | pub <- publications, title pub == t]
+    putStrLn $ show (publications)
     if (length alreadySaved > 0)
         then do 
-            let newContent = [pub | pub <- publications, title pub /= t]
+            putStrLn $ "okkk"
+            let updatedPublications = [pub | pub <- publications, title pub /= t]
             let authors = words $ map (\c -> if c == ',' then ' ' else c) authorsStr
                 year = read yearStr :: Int
                 book = Book authors t city publisher year    
-                tempfile = "temp.txt"
-            withFile tempfile WriteMode $ \handle -> do
-                forM_  (newContent ++ [book]) $ \pub -> do
-                    hPutStrLn handle (show pub)
-            removeFile (dbFilePath context)
-            renameFile tempfile (dbFilePath context)
+            let updatedPublicationsString = foldl (\acc pub -> acc ++ (show pub) ++ "\n") "" (updatedPublications++[book])
+            BS.writeFile (dbFilePath context) $ BS.pack updatedPublicationsString 
     else do
         putStrLn $ "Such book doesnt exist"
 updateBook _ content = putStrLn "Invalid arguments for Book."
@@ -164,18 +158,14 @@ updateArticle [t, journal, yearStr, issueStr, pagesStr, authorsStr] context = do
     let alreadySaved = [pub | pub <- publications, title pub == t]
     if (length alreadySaved > 0)
         then do
-            let newContent = [pub | pub <- publications, title pub /= t]
+            let updatedPublications = [pub | pub <- publications, title pub /= t]
             let authors = words $ map (\c -> if c == ',' then ' ' else c) authorsStr
                 year = read yearStr :: Int
                 issue = read issueStr :: Int
                 (startPage, endPage) = (read $ takeWhile (/= '-') pagesStr, read $ tail $ dropWhile (/= '-') pagesStr) :: (Int, Int)
                 article = Article authors t journal year issue (startPage, endPage)
-                tempfile = "temp.txt"
-            withFile tempfile WriteMode $ \handle -> do
-                forM_  (newContent ++ [article]) $ \pub -> do
-                    hPutStrLn handle (show pub)
-            removeFile (dbFilePath context)
-            renameFile tempfile (dbFilePath context)
+            let updatedPublicationsString = foldl (\acc pub -> acc ++ (show pub) ++ "\n") "" (updatedPublications++[article])
+            BS.writeFile (dbFilePath context) $ BS.pack updatedPublicationsString 
     else do
         putStrLn $ "Such artickle doesnt exist"
 updateArticle _ content = putStrLn "Invalid arguments for Article."
@@ -186,35 +176,14 @@ updateThesis [t, conference, city, yearStr, pagesStr, authorsStr] context = do
     let alreadySaved = [pub | pub <- publications, title pub == t]
     if (length alreadySaved > 0)
         then do
-            let newContent = [pub | pub <- publications, title pub /= t]
+            let updatedPublications = [pub | pub <- publications, title pub /= t]
             let authors = words $ map (\c -> if c == ',' then ' ' else c) authorsStr
                 year = read yearStr :: Int
                 (startPage, endPage) = (read $ takeWhile (/= '-') pagesStr, read $ tail $ dropWhile (/= '-') pagesStr) :: (Int, Int)
                 thesis = Thesis authors t conference city year (startPage, endPage)
-                tempfile = "temp.txt"
-            withFile tempfile WriteMode $ \handle -> do
-                forM_  (newContent ++ [thesis]) $ \pub -> do
-                    hPutStrLn handle (show pub)
-            removeFile (dbFilePath context)
-            renameFile tempfile (dbFilePath context)
+            let updatedPublicationsString = foldl (\acc pub -> acc ++ (show pub) ++ "\n") "" (updatedPublications++[thesis])
+            BS.writeFile (dbFilePath context) $ BS.pack updatedPublicationsString 
     else do
         putStrLn $ "Such thesis doesnt exist"    
 updateThesis _ content = putStrLn "Invalid arguments for Thesis."
 
-savePublication :: FilePath -> Publication -> IO ()
-savePublication path pub = do
-    let content = show pub
-    appendFile path (content++"\n")
-
-readAllPublications :: FilePath -> IO [Publication]
-readAllPublications path = do
-    content <- readFile path
-    let linesContent = lines content
-    let publications = catMaybes $ map readPublication linesContent
-    return publications
-
-readPublication :: String -> Maybe Publication
-readPublication line =
-    case reads line of
-        [(publication, "")] -> Just publication
-        _                   -> Nothing

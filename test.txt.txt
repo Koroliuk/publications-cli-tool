@@ -1,0 +1,1 @@
+Book "The Title" "New York" "Publisher Inc" "2023" "John Doe, Jane Smith"

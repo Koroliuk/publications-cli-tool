@@ -1,2 +1,3 @@
-Було зчитано:[Book {authors = ["John","Doe","Jane","Smith"], title = "The Title123123123", city = "Kiyv", publisher = "Publisher Inc", year = 2023}]
-Було зчитано:[Book {authors = ["John","Doe","Jane","Smith"], title = "The Title123123123", city = "Kiyv", publisher = "Publisher Inc", year = 2023}]
+я┐╜уло я┐╜я┐╜таня┐╜:[Book {authors = ["John","Doe","Jane","Smith"], title = "The Title123123123", city = "Kiyv", publisher = "Publisher Inc", year = 2023}]
+я┐╜уло я┐╜я┐╜таня┐╜:[Book {authors = ["John","Doe","Jane","Smith"], title = "The Title123123123", city = "Kiyv", publisher = "Publisher Inc", year = 2023}]
+я┐╜уло я┐╜я┐╜таня┐╜:[Book {authors = ["John","Doe","Jane","Smith"], title = "The Title123123123", city = "Kiyv", publisher = "Publisher Inc", year = 2023}]
